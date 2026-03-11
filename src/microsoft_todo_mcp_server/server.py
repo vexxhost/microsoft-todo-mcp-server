@@ -272,10 +272,6 @@ async def delete_task_list(list_id: str) -> DeleteResult:
 )
 async def list_tasks(
     list_id: str,
-    status: str | None = Field(
-        default=None,
-        description="Filter by task status: notStarted, inProgress, completed, waitingOnOthers, deferred.",
-    ),
     top: int = Field(
         default=25,
         description="Maximum number of tasks to return per page.",
@@ -291,20 +287,19 @@ async def list_tasks(
         default=None,
         description="OData $orderby clauses to sort results, e.g. ['createdDateTime desc', 'importance asc'].",
     ),
-    filter: str | None = Field(
-        default=None,
-        description="Raw OData $filter expression for advanced filtering. Overrides 'status' if both are provided. Example: \"contains(title,'meeting')\".",
+    filter: str = Field(
+        default="status eq 'notStarted'",
+        description="OData $filter expression. Defaults to incomplete tasks. Examples: \"status eq 'completed'\", \"contains(title,'meeting')\", \"status eq 'notStarted' and importance eq 'high'\".",
     ),
 ) -> ListTasksResult:
     """List tasks in a Microsoft To Do task list with pagination and filtering support."""
     client = await get_client()
 
-    odata_filter = filter if filter else (f"status eq '{status}'" if status else None)
     query_params = TasksRequestBuilder.TasksRequestBuilderGetQueryParameters(
         top=top,
         skip=skip,
         orderby=orderby,
-        filter=odata_filter,
+        filter=filter,
     )
     request_config = RequestConfiguration(query_parameters=query_params)
 
