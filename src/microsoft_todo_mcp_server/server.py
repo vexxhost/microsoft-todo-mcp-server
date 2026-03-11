@@ -9,6 +9,7 @@ from azure.identity import (
     InteractiveBrowserCredential,
     TokenCachePersistenceOptions,
 )
+from kiota_abstractions.base_request_configuration import RequestConfiguration
 from mcp.server.fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 from msgraph.generated.models.body_type import BodyType
@@ -19,6 +20,7 @@ from msgraph.generated.models.item_body import ItemBody
 from msgraph.generated.models.task_status import TaskStatus
 from msgraph.generated.models.todo_task import TodoTask
 from msgraph.generated.models.todo_task_list import TodoTaskList
+from msgraph.generated.users.item.todo.lists.item.tasks.tasks_request_builder import TasksRequestBuilder
 from msgraph.graph_service_client import GraphServiceClient
 from platformdirs import user_config_dir
 from pydantic import BaseModel
@@ -274,14 +276,20 @@ async def list_tasks(
 ) -> ListTasksResult:
     """List tasks in a Microsoft To Do task list. Optionally filter by status: notStarted, inProgress, completed, waitingOnOthers, deferred."""
     client = await get_client()
-    result = await client.me.todo.lists.by_todo_task_list_id(list_id).tasks.get()
+
+    request_config = None
+    if status:
+        request_config = RequestConfiguration(
+            query_parameters=TasksRequestBuilder.TasksRequestBuilderGetQueryParameters(
+                filter=f"status eq '{status}'",
+            ),
+        )
+
+    result = await client.me.todo.lists.by_todo_task_list_id(list_id).tasks.get(request_configuration=request_config)
     tasks = []
     if result and result.value:
         for task in result.value:
-            task_result = _task_to_result(task)
-            if status and task_result.status != status:
-                continue
-            tasks.append(task_result)
+            tasks.append(_task_to_result(task))
     return ListTasksResult(tasks=tasks)
 
 
