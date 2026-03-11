@@ -287,9 +287,9 @@ async def list_tasks(
         description="Number of tasks to skip for pagination. Use with 'top' to page through results.",
         ge=0,
     ),
-    orderby: str | None = Field(
+    orderby: list[str] | None = Field(
         default=None,
-        description="OData $orderby expression to sort results, e.g. 'createdDateTime desc', 'importance asc', 'dueDateTime/dateTime asc'.",
+        description="OData $orderby clauses to sort results, e.g. ['createdDateTime desc', 'importance asc'].",
     ),
     filter: str | None = Field(
         default=None,
@@ -303,7 +303,7 @@ async def list_tasks(
     query_params = TasksRequestBuilder.TasksRequestBuilderGetQueryParameters(
         top=top,
         skip=skip,
-        orderby=orderby.split(",") if orderby else None,
+        orderby=orderby,
         filter=odata_filter,
     )
     request_config = RequestConfiguration(query_parameters=query_params)
