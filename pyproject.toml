@@ -1,0 +1,35 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "microsoft-todo-mcp-server"
+version = "0.1.0"
+description = "MCP server for Microsoft To Do — manage task lists, tasks, and checklist items via Graph API"
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.11"
+dependencies = [
+    "mcp[cli]",
+    "msgraph-sdk",
+    "azure-identity",
+    "platformdirs",
+]
+
+[project.scripts]
+microsoft-todo-mcp-server = "microsoft_todo_mcp_server.server:main"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.5",
+]
+
+[tool.pyright]
+reportMissingTypeStubs = false
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
