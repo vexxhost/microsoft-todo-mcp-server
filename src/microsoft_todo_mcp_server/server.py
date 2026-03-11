@@ -108,7 +108,10 @@ class TaskResult(BaseModel):
 class ListTasksResult(BaseModel):
     tasks: list[TaskResult]
     count: int | None = Field(default=None, description="Total number of matching tasks (requires $count=true).")
-    next_link: str | None = Field(default=None, description="Pagination link indicating more results are available. Use 'skip' to fetch the next page.")
+    next_link: str | None = Field(
+        default=None,
+        description="Pagination link indicating more results are available. Use 'skip' to fetch the next page.",
+    )
 
 
 class ChecklistItemResult(BaseModel):
@@ -189,10 +192,12 @@ async def list_task_lists() -> ListTaskListsResult:
     task_lists = []
     if result and result.value:
         for tl in result.value:
-            task_lists.append(TaskListResult(
-                id=tl.id or "",
-                display_name=tl.display_name or "",
-            ))
+            task_lists.append(
+                TaskListResult(
+                    id=tl.id or "",
+                    display_name=tl.display_name or "",
+                )
+            )
     return ListTaskListsResult(task_lists=task_lists)
 
 
@@ -452,7 +457,9 @@ async def delete_task(list_id: str, task_id: str) -> DeleteResult:
 async def list_checklist_items(list_id: str, task_id: str) -> ListChecklistItemsResult:
     """List checklist items (subtasks) of a Microsoft To Do task."""
     client = await get_client()
-    result = await client.me.todo.lists.by_todo_task_list_id(list_id).tasks.by_todo_task_id(task_id).checklist_items.get()
+    result = (
+        await client.me.todo.lists.by_todo_task_list_id(list_id).tasks.by_todo_task_id(task_id).checklist_items.get()
+    )
     items = []
     if result and result.value:
         for item in result.value:
@@ -474,7 +481,11 @@ async def create_checklist_item(list_id: str, task_id: str, display_name: str) -
     """Add a checklist item (subtask) to a Microsoft To Do task."""
     client = await get_client()
     body = GraphChecklistItem(display_name=display_name)
-    result = await client.me.todo.lists.by_todo_task_list_id(list_id).tasks.by_todo_task_id(task_id).checklist_items.post(body)
+    result = (
+        await client.me.todo.lists.by_todo_task_list_id(list_id)
+        .tasks.by_todo_task_id(task_id)
+        .checklist_items.post(body)
+    )
     if not result:
         raise RuntimeError("Failed to create checklist item.")
     return _checklist_to_result(result)
@@ -504,7 +515,12 @@ async def update_checklist_item(
         body.display_name = display_name
     if is_checked is not None:
         body.is_checked = is_checked
-    result = await client.me.todo.lists.by_todo_task_list_id(list_id).tasks.by_todo_task_id(task_id).checklist_items.by_checklist_item_id(checklist_item_id).patch(body)
+    result = (
+        await client.me.todo.lists.by_todo_task_list_id(list_id)
+        .tasks.by_todo_task_id(task_id)
+        .checklist_items.by_checklist_item_id(checklist_item_id)
+        .patch(body)
+    )
     if not result:
         raise RuntimeError("Failed to update checklist item.")
     return _checklist_to_result(result)
@@ -523,7 +539,12 @@ async def update_checklist_item(
 async def delete_checklist_item(list_id: str, task_id: str, checklist_item_id: str) -> DeleteResult:
     """Delete a checklist item (subtask) from a Microsoft To Do task."""
     client = await get_client()
-    await client.me.todo.lists.by_todo_task_list_id(list_id).tasks.by_todo_task_id(task_id).checklist_items.by_checklist_item_id(checklist_item_id).delete()
+    await (
+        client.me.todo.lists.by_todo_task_list_id(list_id)
+        .tasks.by_todo_task_id(task_id)
+        .checklist_items.by_checklist_item_id(checklist_item_id)
+        .delete()
+    )
     return DeleteResult(message=f"Checklist item '{checklist_item_id}' deleted successfully.")
 
 
