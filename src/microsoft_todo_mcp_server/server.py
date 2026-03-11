@@ -277,13 +277,12 @@ async def list_tasks(
     """List tasks in a Microsoft To Do task list. Optionally filter by status: notStarted, inProgress, completed, waitingOnOthers, deferred."""
     client = await get_client()
 
-    request_config = None
+    query_params = TasksRequestBuilder.TasksRequestBuilderGetQueryParameters(
+        top=25,
+    )
     if status:
-        request_config = RequestConfiguration(
-            query_parameters=TasksRequestBuilder.TasksRequestBuilderGetQueryParameters(
-                filter=f"status eq '{status}'",
-            ),
-        )
+        query_params.filter = f"status eq '{status}'"
+    request_config = RequestConfiguration(query_parameters=query_params)
 
     result = await client.me.todo.lists.by_todo_task_list_id(list_id).tasks.get(request_configuration=request_config)
     tasks = []
