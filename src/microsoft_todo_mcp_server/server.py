@@ -93,23 +93,20 @@ class ListTaskListsResult(BaseModel):
     task_lists: list[TaskListResult]
 
 
-class TaskSummary(BaseModel):
+class TaskResult(BaseModel):
     id: str
     title: str
     status: str
     importance: str
+    body_content: str | None
+    body_content_type: str | None
     due_date: str | None
     created_at: str
     completed_at: str | None
 
 
-class TaskResult(TaskSummary):
-    body_content: str | None
-    body_content_type: str | None
-
-
 class ListTasksResult(BaseModel):
-    tasks: list[TaskSummary]
+    tasks: list[TaskResult]
 
 
 class ChecklistItemResult(BaseModel):
@@ -127,26 +124,6 @@ class DeleteResult(BaseModel):
 
 
 # --- Helpers ---
-
-
-def _task_to_summary(task: TodoTask) -> TaskSummary:
-    due_date = None
-    if task.due_date_time:
-        due_date = task.due_date_time.date_time
-
-    completed_at = None
-    if task.completed_date_time:
-        completed_at = task.completed_date_time.date_time
-
-    return TaskSummary(
-        id=task.id or "",
-        title=task.title or "",
-        status=task.status.value if task.status else "notStarted",
-        importance=task.importance.value if task.importance else "normal",
-        due_date=due_date,
-        created_at=task.created_date_time.isoformat() if task.created_date_time else "",
-        completed_at=completed_at,
-    )
 
 
 def _task_to_result(task: TodoTask) -> TaskResult:
@@ -297,7 +274,7 @@ async def list_tasks(
     list_id: str,
     status: str | None = None,
 ) -> ListTasksResult:
-    """List tasks in a Microsoft To Do task list. Optionally filter by status: notStarted, inProgress, completed, waitingOnOthers, deferred. Returns summaries without body content — use get_task for full details."""
+    """List tasks in a Microsoft To Do task list. Optionally filter by status: notStarted, inProgress, completed, waitingOnOthers, deferred."""
     client = await get_client()
 
     request_config = None
@@ -312,27 +289,8 @@ async def list_tasks(
     tasks = []
     if result and result.value:
         for task in result.value:
-            tasks.append(_task_to_summary(task))
+            tasks.append(_task_to_result(task))
     return ListTasksResult(tasks=tasks)
-
-
-@mcp.tool(
-    title="Get task",
-    structured_output=True,
-    annotations=ToolAnnotations(
-        readOnlyHint=True,
-        destructiveHint=False,
-        idempotentHint=True,
-        openWorldHint=False,
-    ),
-)
-async def get_task(list_id: str, task_id: str) -> TaskResult:
-    """Get full details of a Microsoft To Do task, including body content."""
-    client = await get_client()
-    result = await client.me.todo.lists.by_todo_task_list_id(list_id).tasks.by_todo_task_id(task_id).get()
-    if not result:
-        raise RuntimeError("Task not found.")
-    return _task_to_result(result)
 
 
 @mcp.tool(

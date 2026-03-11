@@ -63,8 +63,7 @@ By default, the server uses the `common` tenant which works with any Microsoft a
 
 | Tool | Description |
 |------|-------------|
-| `list_tasks` | List tasks in a list (summaries, optional status filter) |
-| `get_task` | Get full task details including body content |
+| `list_tasks` | List tasks in a list (optional status filter) |
 | `create_task` | Create a task with title, body, due date, importance |
 | `update_task` | Update any task fields |
 | `complete_task` | Mark a task as completed |
