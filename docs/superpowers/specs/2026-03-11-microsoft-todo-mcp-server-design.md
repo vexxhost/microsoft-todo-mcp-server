@@ -15,7 +15,7 @@ Follow the same architecture as `entra-pim-mcp-server`: single-file FastMCP serv
 - **Token persistence:** `TokenCachePersistenceOptions` with named cache `microsoft-todo-mcp-server` and `allow_unencrypted_storage=True`
 - **Auth record:** Serialized to `~/.config/microsoft-todo-mcp-server/auth-record.json` via `platformdirs`
 - **Redirect URI:** `http://localhost:8400`
-- **Tenant ID:** Use `"common"` authority for multi-tenant support (works with any org or personal Microsoft account). No `AZURE_TENANT_ID` env var needed.
+- **Tenant ID:** Default to `"common"` authority for multi-tenant support (works with any org or personal Microsoft account). Optionally override via `AZURE_TENANT_ID` env var for orgs with conditional access policies that block the common endpoint.
 - **Scopes:** `Tasks.ReadWrite`, `User.Read`
 - **Flow:** On first run, browser opens for interactive consent. Subsequent runs use cached tokens with silent refresh. `azure-identity` handles refresh tokens implicitly via its token cache.
 
@@ -153,7 +153,7 @@ uvx microsoft-todo-mcp-server
 }
 ```
 
-No environment variables required — the well-known client ID is embedded.
+No environment variables required — the well-known client ID and `"common"` tenant are embedded. Optional override: `AZURE_TENANT_ID` for orgs requiring a specific tenant.
 
 ## Error Handling
 
