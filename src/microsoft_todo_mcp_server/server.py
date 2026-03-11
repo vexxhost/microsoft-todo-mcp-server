@@ -107,6 +107,7 @@ class TaskResult(BaseModel):
 
 class ListTasksResult(BaseModel):
     tasks: list[TaskResult]
+    has_more: bool = Field(description="Whether more tasks are available. Use 'skip' to fetch the next page.")
 
 
 class ChecklistItemResult(BaseModel):
@@ -308,7 +309,7 @@ async def list_tasks(
     if result and result.value:
         for task in result.value:
             tasks.append(_task_to_result(task))
-    return ListTasksResult(tasks=tasks)
+    return ListTasksResult(tasks=tasks, has_more=result.odata_next_link is not None if result else False)
 
 
 @mcp.tool(
