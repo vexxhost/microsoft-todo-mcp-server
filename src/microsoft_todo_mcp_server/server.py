@@ -107,7 +107,8 @@ class TaskResult(BaseModel):
 
 class ListTasksResult(BaseModel):
     tasks: list[TaskResult]
-    has_more: bool = Field(description="Whether more tasks are available. Use 'skip' to fetch the next page.")
+    count: int | None = Field(default=None, description="Total number of matching tasks (requires $count=true).")
+    next_link: str | None = Field(default=None, description="Pagination link indicating more results are available. Use 'skip' to fetch the next page.")
 
 
 class ChecklistItemResult(BaseModel):
@@ -277,7 +278,7 @@ async def list_tasks(
         default=25,
         description="Maximum number of tasks to return per page.",
         ge=1,
-        le=100,
+        le=25,
     ),
     skip: int | None = Field(
         default=None,
@@ -301,15 +302,21 @@ async def list_tasks(
         skip=skip,
         orderby=orderby,
         filter=filter,
+        count=True,
     )
     request_config = RequestConfiguration(query_parameters=query_params)
+    request_config.headers.add("ConsistencyLevel", "eventual")
 
     result = await client.me.todo.lists.by_todo_task_list_id(list_id).tasks.get(request_configuration=request_config)
     tasks = []
     if result and result.value:
         for task in result.value:
             tasks.append(_task_to_result(task))
-    return ListTasksResult(tasks=tasks, has_more=result.odata_next_link is not None if result else False)
+    return ListTasksResult(
+        tasks=tasks,
+        count=result.odata_count if result else None,
+        next_link=result.odata_next_link if result else None,
+    )
 
 
 @mcp.tool(
