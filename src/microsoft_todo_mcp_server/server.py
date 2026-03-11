@@ -23,7 +23,7 @@ from msgraph.generated.models.todo_task_list import TodoTaskList
 from msgraph.generated.users.item.todo.lists.item.tasks.tasks_request_builder import TasksRequestBuilder
 from msgraph.graph_service_client import GraphServiceClient
 from platformdirs import user_config_dir
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 # Well-known Microsoft Graph Command Line Tools client ID (first-party, multi-tenant)
 GRAPH_CLIENT_ID = "14d82eec-204b-4c2f-b7e8-296a70dab67e"
@@ -272,16 +272,40 @@ async def delete_task_list(list_id: str) -> DeleteResult:
 )
 async def list_tasks(
     list_id: str,
-    status: str | None = None,
+    status: str | None = Field(
+        default=None,
+        description="Filter by task status: notStarted, inProgress, completed, waitingOnOthers, deferred.",
+    ),
+    top: int = Field(
+        default=25,
+        description="Maximum number of tasks to return per page.",
+        ge=1,
+        le=100,
+    ),
+    skip: int | None = Field(
+        default=None,
+        description="Number of tasks to skip for pagination. Use with 'top' to page through results.",
+        ge=0,
+    ),
+    orderby: str | None = Field(
+        default=None,
+        description="OData $orderby expression to sort results, e.g. 'createdDateTime desc', 'importance asc', 'dueDateTime/dateTime asc'.",
+    ),
+    filter: str | None = Field(
+        default=None,
+        description="Raw OData $filter expression for advanced filtering. Overrides 'status' if both are provided. Example: \"contains(title,'meeting')\".",
+    ),
 ) -> ListTasksResult:
-    """List tasks in a Microsoft To Do task list. Optionally filter by status: notStarted, inProgress, completed, waitingOnOthers, deferred."""
+    """List tasks in a Microsoft To Do task list with pagination and filtering support."""
     client = await get_client()
 
+    odata_filter = filter if filter else (f"status eq '{status}'" if status else None)
     query_params = TasksRequestBuilder.TasksRequestBuilderGetQueryParameters(
-        top=25,
+        top=top,
+        skip=skip,
+        orderby=orderby.split(",") if orderby else None,
+        filter=odata_filter,
     )
-    if status:
-        query_params.filter = f"status eq '{status}'"
     request_config = RequestConfiguration(query_parameters=query_params)
 
     result = await client.me.todo.lists.by_todo_task_list_id(list_id).tasks.get(request_configuration=request_config)
